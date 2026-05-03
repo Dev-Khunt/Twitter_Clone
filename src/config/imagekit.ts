@@ -4,9 +4,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const imagekit = new ImageKit({
-  publicKey: "public_k56xUKzmzKV1LjTAzSBivWN/qIQ=",
-  privateKey: "private_sMuNghvS8ihrvdk7tPV+5bLoI0I=",
-  urlEndpoint: "https://ik.imagekit.io/mgywtmla7",
+  publicKey: process.env.PUBLIC_KEY!,
+  privateKey: process.env.PRIVATE_KEY!,
+  urlEndpoint: process.env.URL_ENDPOINT!,
 });
 
 export default imagekit;
