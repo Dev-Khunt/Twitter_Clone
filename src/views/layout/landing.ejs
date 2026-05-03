@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X (formerly Twitter)</title>
+    <script>
+        // Auto-redirect if already logged in
+        (function() {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    if (payload.exp * 1000 > Date.now()) {
+                        window.location.href = '/home';
+                    }
+                } catch(e) {}
+            }
+        })();
+    </script>
+    <!-- TailwindCSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'x-black': '#000000',
+                        'x-white': '#ffffff',
+                        'x-gray': '#71767b',
+                        'x-dark-gray': '#202327',
+                        'x-border': '#2f3336',
+                        'x-blue': '#1d9bf0',
+                        'x-blue-hover': '#1a8cd8',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    </style>
+</head>
+<body class="text-x-white min-h-screen">
+    <!-- Desktop Layout -->
+    <div class="flex min-h-screen max-md:hidden">
+<!-- Left Section -->
+        <div class="bg-x-black flex-[1] flex items-center justify-center p-10">
+            <svg class="w-72 h-72 fill-x-white" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+            </svg>
+        </div>
+
+        <!-- Right Section -->
+        <div class="text-x-black flex-[1] flex flex-col justify-center p-10 max-w-[600px]">
+            <div class="w-full max-w-[400px]">
+                <svg class="w-10 h-10 fill-x-black mb-8" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+                </svg>
+                
+                <h1 class="text-[64px] font-bold leading-[1.1] mb-8 tracking-[-1px]">Happening now</h1>
+                <h2 class="text-[31px] font-bold mb-8">Join today.</h2>
+
+                <a href="/auth/signup" class="flex items-center justify-center rounded-full text-[17px] font-semibold px-8 h-[52px] w-full bg-x-black text-x-white hover:bg-x-white hover:text-x-black hover:border-x-black border-2 transition-colors mb-4 no-underline">
+                    Create account
+                </a>
+                
+
+                <div class="text-x-gray text-[15px] mt-5">
+                    Already have an account? <a href="/auth/signin" class="text-x-black no-underline hover:underline">Sign in</a>
+                </div>
+
+            </div>  
+        </div>
+    </div>
+
+    <!-- Mobile Layout -->
+    <div class="hidden max-md:flex flex-col items-center min-h-screen">
+        <div class="pt-10 pb-5">
+            <svg class="w-10 h-10 fill-x-white" viewBox="0 0 24 24">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+            </svg>
+        </div>
+        
+        <div class="px-5 flex-1 w-full">
+            <h1 class="text-[36px] font-bold leading-[1.1] mb-8">What's happening</h1>
+            <h2 class="text-[24px] font-bold mb-8">Join today</h2>
+            
+            <a href="/auth/signup" class="flex items-center justify-center rounded-full text-[17px] font-semibold px-8 h-[52px] w-full bg-x-blue text-x-white hover:bg-x-blue-hover transition-colors mb-4 no-underline text-center">
+                Create account
+            </a>
+            <a href="/auth/signin" class="flex items-center justify-center rounded-full text-[17px] font-semibold px-8 h-[52px] w-full bg-transparent text-x-white border border-x-gray hover:bg-[rgba(29,155,240,0.1)] hover:border-x-blue transition-colors mb-4 no-underline text-center">
+                Sign in
+            </a>
+            
+            <div class="text-x-gray text-[15px] mt-5 text-center">
+                Already have an account? <a href="/auth/signin" class="text-x-blue no-underline hover:underline">Sign in</a>
+            </div>
+        </div>
+
+        <footer class="py-5 flex flex-wrap justify-center gap-3 text-[13px] text-x-gray px-5 text-center">
+            <a href="#" class="text-x-gray no-underline hover:underline">Terms</a>
+            <a href="#" class="text-x-gray no-underline hover:underline">Privacy</a>
+            <span>© 2024 X Corp.</span>
+        </footer>
+    </div>
+</body>
+</html>

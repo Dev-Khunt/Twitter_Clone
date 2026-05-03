@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tweet</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/js/sidebar.js"></script>
+
+  <style>
+    body { background-color: black; }
+  </style>
+</head>
+
+<body class="text-white">
+
+<div class="flex max-w-[1400px] mx-auto">
+
+  <!-- LEFT SIDEBAR -->
+  <div id="sidebar" class="hidden md:block"></div>
+
+  <!-- CENTER -->
+  <div class="flex-1 border-x border-gray-800 max-w-[600px]">
+
+    <!-- HEADER -->
+    <div class="sticky top-0 bg-black border-b border-gray-800 p-4 font-bold text-lg">
+      Tweet
+    </div>
+
+    <!-- MAIN TWEET -->
+    <div id="tweetContainer"></div>
+
+    <!-- COMMENT INPUT -->
+    <div class="border-b border-gray-800 p-4 flex gap-3">
+      <input id="commentInput"
+        class="w-full bg-black outline-none"
+        placeholder="Post your reply"/>
+      <button onclick="postComment()"
+        class="bg-[#1d9bf0] px-4 py-1 rounded-full">
+        Reply
+      </button>
+    </div>
+
+    <!-- COMMENTS -->
+    <div id="commentsContainer"></div>
+
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <div class="w-[350px] p-4 hidden lg:block">
+    <input
+      type="text"
+      placeholder="Search"
+      class="w-full p-3 rounded-full bg-[#202327] outline-none"
+    />
+  </div>
+
+</div>
+
+<script>
+const token = localStorage.getItem("accessToken");
+const tweetId = window.location.pathname.split("/").pop();
+
+
+// 🟦 LOAD TWEET
+async function loadTweet() {
+  try {
+    const res = await fetch(`/tweets/${tweetId}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const data = await res.json();
+    const tweet = data[0];
+
+    document.getElementById("tweetContainer").innerHTML = `
+      <div class="border-b border-gray-800 p-4 flex gap-3">
+
+        <img src="${tweet.profile_image || 'https://ui-avatars.com/api/?name=' + tweet.username}"
+             class="w-10 h-10 rounded-full"/>
+
+        <div class="w-full">
+
+          <div>
+            <span class="font-bold">${tweet.display_name}</span>
+            <span class="text-gray-500 ml-1">@${tweet.username}</span>
+          </div>
+
+          <p class="mt-2">${tweet.content || ""}</p>
+
+          ${tweet.media_url ? `
+            <img src="${tweet.media_url}" 
+                 class="mt-3 rounded-xl max-h-[400px] w-full object-cover"/>
+          ` : ""}
+
+          <div class="flex justify-between mt-3 text-gray-500 text-sm max-w-[400px]">
+
+            <div onclick="handleRetweet(this, ${tweet.tweet_id}, ${tweet.retweet_count}, ${tweet.isRetweeted})"
+                 class="cursor-pointer ${tweet.isRetweeted ? 'text-green-500' : ''}">
+              🔁 ${tweet.retweet_count}
+            </div>
+
+            <div onclick="handleLike(this, ${tweet.tweet_id}, ${tweet.like_count}, ${tweet.isLiked})"
+                 class="cursor-pointer ${tweet.isLiked ? 'text-red-500' : ''}">
+              ❤️ ${tweet.like_count}
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Tweet load error:", err);
+  }
+}
+
+
+// 🟦 LOAD COMMENTS
+async function loadComments() {
+  try {
+    const res = await fetch(`/comments/tweet/${tweetId}`, {
+      headers: { Authorization: "Bearer " + token }
+    });
+
+    const comments = await res.json();
+    const container = document.getElementById("commentsContainer");
+    container.innerHTML = "";
+
+    if (!comments.length) {
+      container.innerHTML = `
+        <div class="text-center text-gray-500 py-10">
+          No comments yet
+        </div>
+      `;
+      return;
+    }
+
+    comments.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "border-b border-gray-800 p-4 flex gap-3";
+
+      div.innerHTML = `
+        <img src="${c.profile_image || 'https://ui-avatars.com/api/?name=' + c.username}"
+             class="w-10 h-10 rounded-full"/>
+
+        <div class="w-full">
+
+          <div>
+            <span class="font-bold">${c.display_name}</span>
+            <span class="text-gray-500 ml-1">@${c.username}</span>
+          </div>
+
+          <p class="mt-2">${c.content}</p>
+
+          <div class="flex gap-4 mt-2 text-sm">
+
+            <button onclick="showReplyBox(${c.comment_id})">Reply</button>
+
+            <button onclick="deleteComment(${c.comment_id})"
+              class="text-red-500">
+              Delete
+            </button>
+
+          </div>
+
+          <div id="reply-box-${c.comment_id}" class="hidden mt-2">
+            <input id="reply-input-${c.comment_id}" class="w-full bg-black outline-none"/>
+            <button onclick="postReply(${c.comment_id})">Reply</button>
+          </div>
+
+          <div id="replies-${c.comment_id}" class="ml-6 mt-3"></div>
+
+        </div>
+      `;
+
+      container.appendChild(div);
+      loadReplies(c.comment_id);
+    });
+
+  } catch (err) {
+    console.error("Comments error:", err);
+  }
+}
+
+
+// 🟦 POST COMMENT
+async function postComment() {
+  const content = document.getElementById("commentInput").value;
+
+  if (!content.trim()) return;
+
+  await fetch(`/comments/${tweetId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ content })
+  });
+
+  document.getElementById("commentInput").value = "";
+  loadComments();
+}
+
+
+// 🟦 DELETE COMMENT
+async function deleteComment(id) {
+  await fetch(`/comments/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  loadComments();
+}
+
+
+// 🟦 SHOW REPLY BOX
+function showReplyBox(id) {
+  document.getElementById(`reply-box-${id}`).classList.toggle("hidden");
+}
+
+
+// 🟦 POST REPLY
+async function postReply(commentId) {
+  const input = document.getElementById(`reply-input-${commentId}`);
+
+  await fetch(`/comments/reply/${commentId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token
+    },
+    body: JSON.stringify({ content: input.value })
+  });
+
+  input.value = "";
+  loadReplies(commentId);
+}
+
+
+// 🟦 LOAD REPLIES
+async function loadReplies(commentId) {
+  const res = await fetch(`/comments/replies/${commentId}`, {
+    headers: { Authorization: "Bearer " + token }
+  });
+
+  const replies = await res.json();
+  const container = document.getElementById(`replies-${commentId}`);
+  container.innerHTML = "";
+
+  replies.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "mt-2 text-sm";
+
+    div.innerHTML = `
+      <p class="font-bold">${r.display_name}</p>
+      <p>${r.content}</p>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+
+// 🟦 LIKE / RETWEET (REUSE)
+async function handleLike(el, tweetId, count, isLiked) {
+  if (isLiked) {
+    await fetch(`/reactions/tweets/${tweetId}`, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token }
+    });
+  } else {
+    await fetch(`/reactions/tweets/${tweetId}`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }
+    });
+  }
+
+  loadTweet();
+}
+
+async function handleRetweet(el, tweetId, count, isRetweeted) {
+  if (isRetweeted) {
+    await fetch(`/retweets/${tweetId}`, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token }
+    });
+  } else {
+    await fetch(`/retweets/${tweetId}`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + token }
+    });
+  }
+
+  loadTweet();
+}
+
+
+// INIT
+document.addEventListener("DOMContentLoaded", () => {
+  loadSidebar();
+  loadTweet();
+  loadComments();
+});
+</script>
+
+</body>
+</html>
